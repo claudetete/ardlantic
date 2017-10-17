@@ -1,102 +1,129 @@
 #include <Arduino.h>
 
-#include <Ardlantic_IRD.h>
+/* Infra Red Protocol */
+#include <Ardlantic_IRP.h>
 
-/* The RX LED has a defined Arduino pin */
-#define RXLED 17
+/**
+ * MYSENSORS
+ **/
+/* Enable debug prints to serial monitor */
+#define MY_DEBUG
+/* Enable and select radio type attached (NRF24) */
+#define MY_RADIO_NRF24
+/* Enable repeater functionality for this node */
+#define MY_REPEATER_FEATURE
 
+/* do not use to high baud rate when not needed */
+#define MY_BAUD_RATE 9600
+/* CE/CS PIN for NRF24L01+ can be redefined (9 and 10 by default) */
+/* #define MY_RF24_CE_PIN 9 */
+/* #define MY_RF24_CS_PIN 10 */
 
-/* Values for remote control of Atlantic AMC12XPM.UI */
-/* Header start value, duration in microsecond */
-#define AC_START (3750)
-/* Header first value, duration in microsecond */
-#define AC_FIRST (1950)
-/* space/pause between command (except header start), duration in microsecond */
-#define AC_PAUSE (400)
-/* Command bit 1, duration in microsecond */
-#define AC_BIT1  (1450)
-/* Command bit 0, duration in microsecond */
-#define AC_BIT0  (550)
+/* node id used for gateway (must be uniq) */
+/* when not set it leave the gateway to assign an id (do not work always) */
+#define MY_NODE_ID 42
 
-/* number of bytes for data part */
-#define AC_VALUE_BYTE_NB (13)
-/* number of command for whole frame */
-/* 2 command for header + 1 pause + 13 bytes of data (13 * 8 bits * 2 to have data + pause for each bit) */
-#define AC_RX_COMMAND_NB (2 + 1 + (AC_VALUE_BYTE_NB * 8 * 2))
+/* MySensors will override usual function of a sketch, it for a node it need a gateway to start */
+#include <MySensors.h>
 
-/* buffer of RX command in microseconds */
-unsigned int RX_buffer[AC_RX_COMMAND_NB];
+/* Sensor id to present and finally received */
+#define SENSOR_ID_SEND          (0)
+#define SENSOR_ID_ION           (1)
+#define SENSOR_ID_STARTUP       (2)
+#define SENSOR_ID_SWING         (3)
+#define SENSOR_ID_HOUR          (4)
+#define SENSOR_ID_FAN_MODE      (5)
+#define SENSOR_ID_FLOW_MODE     (6)
+#define SENSOR_ID_FAN_MAX       (7)
+#define SENSOR_ID_TEMP_RELATIVE (8)
+#define SENSOR_ID_TEMPEATURE    (9)
 
-const char RX_value[AC_VALUE_BYTE_NB] = {
-  /* fanauto hot 26 */
-  0xC1, 0xF0, 0x04, 0x80, 0x08, 0x03, 0x21, 0x31, 0x09, 0x10, 0xCF, 0x5A, 0xAA
-};
+/* instance a IR message*/
+IRP_Message* MessageIR;
+
+void before()
+{
+  /* everything before MySensors execution */
+  MessageIR = new IRP_Message();
+}
 
 void setup()
 {
-  int bit_pos = 0;
-  int word_pos = 0;
-  int command_pos = 0;
+  /* everything to init after MySensors init */
+}
 
-  // Set RX LED as an output
-  pinMode(RXLED, OUTPUT);
+void presentation()
+{
+  /* Send the sketch version information to the gateway and Node */
+  sendSketchInfo("AC living room", "1.0");
 
-  //This pipes to the serial monitor
-  Serial.begin(9600);
-
-  /* init rx command buffer for header */
-  RX_buffer[command_pos] = AC_START;
-  command_pos++;
-  RX_buffer[command_pos] = AC_FIRST;
-  command_pos++;
-  RX_buffer[command_pos] = AC_PAUSE;
-  command_pos++;
-
-  /* fill rx command buffer with data part from last word to first (msb to lsb) */
-  for (word_pos = AC_VALUE_BYTE_NB - 1; word_pos >= 0; word_pos--)
-  {
-    /* in bit order lsb to msb */
-    for (bit_pos = 0; bit_pos < 8; bit_pos++)
-    {
-      /* data */
-      if ((RX_value[word_pos] >> bit_pos) & 0x1)
-      {
-        RX_buffer[command_pos] = AC_BIT1;
-      }
-      else
-      {
-        RX_buffer[command_pos] = AC_BIT0;
-      }
-      command_pos++;
-
-      /* space/pause */
-      RX_buffer[command_pos] = AC_PAUSE;
-      command_pos++;
-    }
-  }
+  /* everything to present each sensors/actuators on this node to the gateway (so domotic box will register it) */
+  present(SENSOR_ID_SEND, S_BINARY);
+  present(SENSOR_ID_ION, S_BINARY);
+  present(SENSOR_ID_STARTUP, S_BINARY);
+  present(SENSOR_ID_SWING, S_BINARY);
+  present(SENSOR_ID_HOUR, S_CUSTOM);
+  present(SENSOR_ID_FAN_MODE, S_HVAC);
+  present(SENSOR_ID_FLOW_MODE, S_HVAC);
+  present(SENSOR_ID_FAN_MAX, S_BINARY);
+  present(SENSOR_ID_TEMP_RELATIVE, S_TEMP);
+  present(SENSOR_ID_TEMPEATURE, S_TEMP);
 }
 
 void loop()
 {
-  // Print "Hello World" to the Serial Monitor
-  Serial.println("Hello world");
+}
 
-  // set the LED on
-  digitalWrite(RXLED, LOW);
-  // wait
-  delay(100);
-  // set the LED off
-  digitalWrite(RXLED, HIGH);
-  // wait
-  delay(100);
-  // set the LED on
-  digitalWrite(RXLED, LOW);
-  // wait
-  delay(1000);
-  // set the LED off
-  digitalWrite(RXLED, HIGH);
-  /* try send IR raw */
-  IRD_sendRaw(RX_buffer, AC_RX_COMMAND_NB, 38);
-  // wait
-  delay(1000);
+void receive(const MyMessage &message)
+{
+  Serial.println("Message received!");
+
+  switch(message.sensor)
+  {
+    case SENSOR_ID_ION:
+      MessageIR->setIon(message.getBool());
+      break;
+
+    case SENSOR_ID_STARTUP:
+      MessageIR->setStartUp(message.getBool());
+      break;
+
+    case SENSOR_ID_SWING:
+      MessageIR->setSwing(message.getBool());
+      break;
+
+    case SENSOR_ID_HOUR:
+      MessageIR->setHour(message.getByte());
+      break;
+
+    case SENSOR_ID_FAN_MODE:
+      MessageIR->setFanMode((IRP_FanMode_t)message.getByte());
+      break;
+
+    case SENSOR_ID_FLOW_MODE:
+      MessageIR->setFlowMode((IRP_FlowMode_t)message.getByte());
+      break;
+
+    case SENSOR_ID_FAN_MAX:
+      MessageIR->setFanMax(message.getBool());
+      break;
+
+    case SENSOR_ID_TEMP_RELATIVE:
+      MessageIR->setTemperatureRelative(message.getInt());
+      break;
+
+    case SENSOR_ID_TEMPEATURE:
+      MessageIR->setTemperature(message.getByte());
+      break;
+
+    case SENSOR_ID_SEND:
+      Serial.println("Send IR frame...");
+      MessageIR->send();
+      /* TODO send message to indicate IR was emit */
+      break;
+
+    default:
+      Serial.println("Message received with unknown sensor ID.");
+      break;
+  }
 }

@@ -13,7 +13,7 @@
 // LG added by Darryl Smith (based on the JVC protocol)
 // Whynter A/C ARC-110WD added by Francesco Meschia
 //
-// Keep only send raw by Claude Tete
+// Keep only send raw by Claude Tete (IRD, Infra Red Driver)
 //******************************************************************************
 
 #include "Arduino.h"
@@ -55,9 +55,9 @@ void ird_space(unsigned int time);
 void ird_custom_delay_usec(unsigned long uSecs);
 
 
-void IRD_sendRaw(const unsigned int buffer[], unsigned int length, unsigned int khz)
+void IRD_sendRaw(const uint16_t buffer[], uint8_t length, uint8_t khz)
 {
-  int buffer_index = 0;
+  uint8_t buffer_index = 0;
 
   // Set IR carrier frequency
   ird_enableIROut(khz);
@@ -66,11 +66,11 @@ void IRD_sendRaw(const unsigned int buffer[], unsigned int length, unsigned int 
   {
     if (buffer_index & 1)
     {
-      ird_space(buffer[buffer_index]);
+      ird_space((unsigned int)buffer[buffer_index]);
     }
     else
     {
-      ird_mark(buffer[buffer_index]);
+      ird_mark((unsigned int)buffer[buffer_index]);
     }
   }
 
