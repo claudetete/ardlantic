@@ -117,7 +117,6 @@ void receive(const MyMessage &message)
       break;
 
     case SENSOR_ID_SEND:
-      Serial.println("Send IR frame...");
       MessageIR->send();
       /* TODO send message to indicate IR was emit */
       break;
@@ -126,4 +125,6 @@ void receive(const MyMessage &message)
       Serial.println("Message received with unknown sensor ID.");
       break;
   }
+
+  Serial.println("### Message processed!");
 }

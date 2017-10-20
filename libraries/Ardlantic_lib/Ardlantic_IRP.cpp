@@ -136,9 +136,11 @@ void IRP_Message::send(void)
   int data_byte     = 0;
   int command_index = 0;
 
+  Serial.println("Compute IR frame parity...");
   /* compute and set parity on data part to have a valid frame */
   this->setParity();
 
+  Serial.println("Build IR frame duration...");
   /* init rx command buffer for header */
   _buffer[command_index] = irp_COMMAND_DURATION_START;
   command_index++;
@@ -171,8 +173,9 @@ void IRP_Message::send(void)
   }
 
   /* send IR frame */
-  /* FIXME: arduino crash during this call */
-  IRD_sendRaw(_buffer, (uint16_t)IRP_FRAME_COMMAND_NB, (uint16_t)38);
+  Serial.println("Send IR frame...");
+  IRD_sendRaw(_buffer, (uint8_t)IRP_FRAME_COMMAND_NB, (uint8_t)38);
+  Serial.println("Send IR frame...Done");
 }
 
 void IRP_Message::setIon(bool isEnableIon)
