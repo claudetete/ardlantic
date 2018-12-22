@@ -23,27 +23,31 @@
 #define irp_ION_OFF  (0)
 #define irp_ION_ON   (1)
 
-/* StartUp */
-#define irp_STARTUP_BYTE1 (5)
-#define irp_STARTUP_BIT1  (5)
-#define irp_STARTUP_MASK1 (0x20)
-#define irp_STARTUP_BYTE2 (10)
-#define irp_STARTUP_BIT2  (2)
-#define irp_STARTUP_MASK2 (0x04)
-#define irp_STARTUP_START   (0)
-#define irp_STARTUP_STARTED (1)
+/* Power ON */
+#define irp_POWER_ON_BYTE    (5)
+#define irp_POWER_ON_BIT     (5)
+#define irp_POWER_ON_MASK    (0x20)
+#define irp_POWER_ON_START   (0)
+#define irp_POWER_ON_STARTED (1)
+
+/* Switch ON->OFF, OFF->, and flow mode */
+#define irp_SWITCH_POWER_OR_MODE_BYTE   (10)
+#define irp_SWITCH_POWER_OR_MODE_BIT    (2)
+#define irp_SWITCH_POWER_OR_MODE_MASK   (0x04)
+#define irp_SWITCH_POWER_OR_MODE_SWITCH (0)
+#define irp_SWITCH_POWER_OR_MODE_KEEP   (1)
 
 /* Swing */
-#define irp_SWING_BYTE1 (8)
-#define irp_SWING_BIT1  (0)
-#define irp_SWING_MASK1 (0x07)
-#define irp_SWING_BYTE2 (10)
-#define irp_SWING_BIT2  (1)
-#define irp_SWING_MASK2 (0x02)
-#define irp_SWING_OFF1 (0)
-#define irp_SWING_ON1  (7)
-#define irp_SWING_OFF2 (0)
-#define irp_SWING_ON2  (1)
+#define irp_SWING_PART1_BYTE (8)
+#define irp_SWING_PART1_BIT  (0)
+#define irp_SWING_PART1_MASK (0x07)
+#define irp_SWING_PART1_OFF  (0)
+#define irp_SWING_PART1_ON   (7)
+#define irp_SWING_PART2_BYTE (10)
+#define irp_SWING_PART2_BIT  (1)
+#define irp_SWING_PART2_MASK (0x02)
+#define irp_SWING_PART2_OFF  (0)
+#define irp_SWING_PART2_ON   (1)
 
 /* Hour */
 #define irp_HOUR_BYTE (7)
@@ -62,19 +66,33 @@
 #define irp_FLOW_MODE_BIT  (0)
 #define irp_FLOW_MODE_MASK (0x03)
 
-/* Max/Ion/Timer */
-#define irp_FAN_MAX_BYTE (5)
-#define irp_FAN_MAX_BIT  (4)
-#define irp_FAN_MAX_MASK (0x10)
-#define irp_FAN_MAX_OFF (1)
-#define irp_FAN_MAX_ON  (0)
+/* Fan Max/Ion/Power OFF */
+#define irp_FAN_MAX_OR_ION_OR_POWER_OFF_BYTE (5)
+#define irp_FAN_MAX_OR_ION_OR_POWER_OFF_BIT  (4)
+#define irp_FAN_MAX_OR_ION_OR_POWER_OFF_MASK (0x10)
+#define irp_FAN_MAX_OR_ION_OR_POWER_OFF_TRUE  (0)
+#define irp_FAN_MAX_OR_ION_OR_POWER_OFF_FALSE (1)
+
+/* Fan Max */
+#define irp_FAN_MAX_PART1_BYTE (5)
+#define irp_FAN_MAX_PART1_BIT  (6)
+#define irp_FAN_MAX_PART1_MASK (0x40)
+#define irp_FAN_MAX_PART2_BYTE (10)
+#define irp_FAN_MAX_PART2_BIT  (0)
+#define irp_FAN_MAX_PART2_MASK (0x01)
+#define irp_FAN_MAX_OFF  (0)
+#define irp_FAN_MAX_ON   (1)
 
 /* Temp relative */
 #define irp_TEMP_RELATIVE_BYTE        (4)
 #define irp_TEMP_RELATIVE_BIT         (4)
 #define irp_TEMP_RELATIVE_MASK        (0xF0)
 #define irp_TEMP_RELATIVE_SIGNED_MASK (0x8)
-#define irp_TEMP_RELATIVE_NUM_MAX     (7)
+#define irp_TEMP_RELATIVE_NEGATIVE_2  (10)
+#define irp_TEMP_RELATIVE_NEGATIVE_1  (9)
+#define irp_TEMP_RELATIVE_0           (0)
+#define irp_TEMP_RELATIVE_POSITIVE_1  (1)
+#define irp_TEMP_RELATIVE_POSITIVE_2  (2)
 
 /* Temperature */
 #define irp_TEMPERATURE_BYTE   (4)
@@ -91,6 +109,18 @@
 #define irp_PARITY_BIT_NB    (4)
 
 
+/****** MACRO ******/
+#define irp_SET_BITS(NAME, value)                                   \
+  (_data[irp_##NAME##_BYTE] =                                       \
+   /* keep only bits not used and */                                \
+   /* and set only bits used */                                     \
+   ((_data[irp_##NAME##_BYTE] & ~irp_##NAME##_MASK) |               \
+    (uint8_t)((value << irp_##NAME##_BIT) & irp_##NAME##_MASK)))
+
+#define irp_GET_BITS(NAME)                                              \
+    ((_data[irp_##NAME##_BYTE] & irp_##NAME##_MASK) >> irp_##NAME##_BIT)
+
+
 /****** TYPE ******/
 
 
@@ -101,10 +131,10 @@ const uint8_t irp_tab_init_data[IRP_FRAME_DATA_BYTE_NB] =
   0x5A, /*  byte1 */
   0xCF, /*  byte2 */
   0x10, /*  byte3 */
-  0x00, /*  byte4 */
-  0x01, /*  byte5 */
-  0x00, /*  byte6 */
-  0x00, /*  byte7 */
+  0x01, /*  byte4 */
+  0x21, /*  byte5 */
+  0x20, /*  byte6 */
+  0x01, /*  byte7 */
   0x08, /*  byte8 */
   0x80, /*  byte9 */
   0x00, /* byte10 */
@@ -150,7 +180,8 @@ void IRP_Message::send(void)
   command_index++;
 
   /* fill rx command buffer with data part from last word to first (msb to lsb) */
-  for (data_byte = IRP_FRAME_DATA_BYTE_NB - 1; data_byte >= 0; data_byte--)
+  /*for (data_byte = IRP_FRAME_DATA_BYTE_NB - 1; data_byte >= 0; data_byte--)*/
+  for (data_byte = 0; data_byte < IRP_FRAME_DATA_BYTE_NB; data_byte++)
   {
     /* in bit order lsb to msb about a byte */
     for (data_bit = 0; data_bit < 8; data_bit++)
@@ -183,26 +214,17 @@ void IRP_Message::setIon(bool isEnableIon)
   if (isEnableIon)
   {
     /* ION ON */
-    _data[irp_ION_BYTE] =
-      ((_data[irp_ION_BYTE] & ~irp_ION_MASK) |                  /* keep only bits not used and */
-       (uint8_t)((irp_ION_ON << irp_ION_BIT) & irp_ION_MASK)); /* set only bits used */
-
-    /* FAN MAX is set to ON when ION is ON */
-    _data[irp_FAN_MAX_BYTE] =
-      ((_data[irp_FAN_MAX_BYTE] & ~irp_FAN_MAX_MASK) |                      /* keep only bits not used and */
-       (uint8_t)((irp_FAN_MAX_ON << irp_FAN_MAX_BIT) & irp_FAN_MAX_MASK)); /* set only bits used */
+    irp_SET_BITS(ION, irp_ION_ON);
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_TRUE);
+    /* FAN MAX PART should be reseted */
+    irp_SET_BITS(FAN_MAX_PART1, irp_FAN_MAX_OFF);
+    irp_SET_BITS(FAN_MAX_PART2, irp_FAN_MAX_OFF);
   }
   else
   {
     /* ION OFF */
-    _data[irp_ION_BYTE] =
-      ((_data[irp_ION_BYTE] & ~irp_ION_MASK) |                   /* keep only bits not used and */
-       (uint8_t)((irp_ION_OFF << irp_ION_BIT) & irp_ION_MASK)); /* set only bits used */
-
-    /* FAN MAX is set to OFF when ION is OFF */
-    _data[irp_FAN_MAX_BYTE] =
-      ((_data[irp_FAN_MAX_BYTE] & ~irp_FAN_MAX_MASK) |                       /* keep only bits not used and */
-       (uint8_t)((irp_FAN_MAX_OFF << irp_FAN_MAX_BIT) & irp_FAN_MAX_MASK)); /* set only bits used */
+    irp_SET_BITS(ION, irp_ION_OFF);
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_FALSE);
   }
 }
 
@@ -210,30 +232,33 @@ void IRP_Message::setStartUp(bool isStartUp)
 {
   if (isStartUp)
   {
-    /* To start up*/
-
-    /* Start Up bit1 */
-    _data[irp_STARTUP_BYTE1] =
-      ((_data[irp_STARTUP_BYTE1] & ~irp_STARTUP_MASK1) |
-       (uint8_t)((irp_STARTUP_START << irp_STARTUP_BIT1) & irp_STARTUP_MASK1));
-
-    /* Start Up bit2 */
-    _data[irp_STARTUP_BYTE2] =
-      ((_data[irp_STARTUP_BYTE2] & ~irp_STARTUP_MASK2) |
-       (uint8_t)((irp_STARTUP_START << irp_STARTUP_BIT2) & irp_STARTUP_MASK2));
+    /* Power ON */
+    irp_SET_BITS(POWER_ON, irp_POWER_ON_START);
+    /* Switch power from OFF to ON */
+    irp_SET_BITS(SWITCH_POWER_OR_MODE, irp_SWITCH_POWER_OR_MODE_SWITCH);
   }
   else
   {
-    /* Already started */
+    /* Power already ON */
+    irp_SET_BITS(POWER_ON, irp_POWER_ON_STARTED);
+    /* Power not switched */
+    irp_SET_BITS(SWITCH_POWER_OR_MODE, irp_SWITCH_POWER_OR_MODE_KEEP);
+  }
+}
 
-    /* Start Up bit1 */
-    _data[irp_STARTUP_BYTE1] =
-      ((_data[irp_STARTUP_BYTE1] & ~irp_STARTUP_MASK1) |
-       (uint8_t)((irp_STARTUP_STARTED << irp_STARTUP_BIT1) & irp_STARTUP_MASK1));
-    /* Start Up bit1 */
-    _data[irp_STARTUP_BYTE2] =
-      ((_data[irp_STARTUP_BYTE2] & ~irp_STARTUP_MASK2) |
-       (uint8_t)((irp_STARTUP_STARTED << irp_STARTUP_BIT2) & irp_STARTUP_MASK2));
+void IRP_Message::setPowerOff(bool isPowerOff)
+{
+  if (isPowerOff)
+  {
+    /* Switch power from ON to OFF */
+    irp_SET_BITS(SWITCH_POWER_OR_MODE, irp_SWITCH_POWER_OR_MODE_SWITCH);
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_TRUE);
+  }
+  else
+  {
+    /* power already OFF */
+    irp_SET_BITS(SWITCH_POWER_OR_MODE, irp_SWITCH_POWER_OR_MODE_KEEP);
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_FALSE);
   }
 }
 
@@ -242,30 +267,17 @@ void IRP_Message::setSwing(bool isEnableSwing)
   if (isEnableSwing)
   {
     /* Switch Swing to ON */
-
-    /* Swing bit1 */
-    _data[irp_SWING_BYTE1] =
-      ((_data[irp_SWING_BYTE1] & ~irp_SWING_MASK1) |
-       (uint8_t)((irp_SWING_ON1 << irp_SWING_BIT1) & irp_SWING_MASK1));
-
-    /* Swing bit2 */
-    _data[irp_SWING_BYTE2] =
-      ((_data[irp_SWING_BYTE2] & ~irp_SWING_MASK2) |
-       (uint8_t)((irp_SWING_ON2 << irp_SWING_BIT2) & irp_SWING_MASK2));
+    irp_SET_BITS(SWING_PART1, irp_SWING_PART1_ON);
+    irp_SET_BITS(SWING_PART2, irp_SWING_PART2_ON);
+    /* FAN MAX PART should be reseted */
+    irp_SET_BITS(FAN_MAX_PART1, irp_FAN_MAX_OFF);
+    irp_SET_BITS(FAN_MAX_PART2, irp_FAN_MAX_OFF);
   }
   else
   {
     /* Switch Swing to OFF */
-
-    /* Swing bit1 */
-    _data[irp_SWING_BYTE1] =
-      ((_data[irp_SWING_BYTE1] & ~irp_SWING_MASK1) |
-       (uint8_t)((irp_SWING_OFF1 << irp_SWING_BIT1) & irp_SWING_MASK1));
-
-    /* Swing bit2 */
-    _data[irp_SWING_BYTE2] =
-      ((_data[irp_SWING_BYTE2] & ~irp_SWING_MASK2) |
-       (uint8_t)((irp_SWING_OFF2 << irp_SWING_BIT2) & irp_SWING_MASK2));
+    irp_SET_BITS(SWING_PART1, irp_SWING_PART1_OFF);
+    irp_SET_BITS(SWING_PART2, irp_SWING_PART2_OFF);
   }
 }
 
@@ -283,16 +295,12 @@ void IRP_Message::setHour(uint8_t hour)
   if (hour)
   {
     /* from 01h to 23h, same value from 1 to 23 */
-    _data[irp_HOUR_BYTE] =
-      ((_data[irp_HOUR_BYTE] & ~irp_HOUR_MASK) |
-       (uint8_t)((hour << irp_HOUR_BIT) & irp_HOUR_MASK));
+    irp_SET_BITS(HOUR, hour);
   }
   else
   {
     /* midnight 00h has value 24 */
-    _data[irp_HOUR_BYTE] =
-      ((_data[irp_HOUR_BYTE] & ~irp_HOUR_MASK) |
-       (uint8_t)((irp_HOUR_00H << irp_HOUR_BIT) & irp_HOUR_MASK));
+    irp_SET_BITS(HOUR, irp_HOUR_00H);
   }
 }
 
@@ -314,9 +322,7 @@ void IRP_Message::setFanMode(IRP_FanMode_t fanMode)
   }
 
   /* Fan */
-  _data[irp_FAN_MODE_BYTE] =
-    ((_data[irp_FAN_MODE_BYTE] & ~irp_FAN_MODE_MASK) |
-     (uint8_t)((fanMode << irp_FAN_MODE_BIT) & irp_FAN_MODE_MASK));
+  irp_SET_BITS(FAN_MODE, fanMode);
 }
 
 bool IRP_Message::setFlowMode(IRP_FlowMode_t flowMode)
@@ -337,9 +343,9 @@ bool IRP_Message::setFlowMode(IRP_FlowMode_t flowMode)
   }
 
   /* Flow Mode */
-  _data[irp_FLOW_MODE_BYTE] =
-    ((_data[irp_FLOW_MODE_BYTE] & ~irp_FLOW_MODE_MASK) |
-     (uint8_t)((flowMode << irp_FLOW_MODE_BIT) & irp_FLOW_MODE_MASK));
+  irp_SET_BITS(FLOW_MODE, flowMode);
+  /* Switch mode */
+  irp_SET_BITS(SWITCH_POWER_OR_MODE, irp_SWITCH_POWER_OR_MODE_SWITCH);
 
   /* return 0 to use temperature offset, use temperature otherwise */
   return ((bool)(!flowMode));
@@ -350,88 +356,80 @@ void IRP_Message::setFanMax(bool isFanMax)
   if (isFanMax)
   {
     /* Fan Max ON */
-
-    _data[irp_FAN_MAX_BYTE] =
-      ((_data[irp_FAN_MAX_BYTE] & ~irp_FAN_MAX_MASK) |
-       (unsigned char)((irp_FAN_MAX_ON << irp_FAN_MAX_BIT) & irp_FAN_MAX_MASK));
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_TRUE);
+    if ((irp_GET_BITS(ION) == irp_ION_OFF) &&
+        (irp_GET_BITS(SWING_PART1) == irp_SWING_PART1_OFF))
+    {
+      irp_SET_BITS(FAN_MAX_PART1, irp_FAN_MAX_ON);
+      irp_SET_BITS(FAN_MAX_PART2, irp_FAN_MAX_ON);
+    }
+    else
+    {
+      irp_SET_BITS(FAN_MAX_PART1, irp_FAN_MAX_OFF);
+      irp_SET_BITS(FAN_MAX_PART2, irp_FAN_MAX_OFF);
+    }
+    /* Fan Max reset hour to 0 */
+    irp_SET_BITS(HOUR, 0);
   }
   else
   {
     /* Fan Max OFF */
-
-    _data[irp_FAN_MAX_BYTE] =
-      ((_data[irp_FAN_MAX_BYTE] & ~irp_FAN_MAX_MASK) |
-       (unsigned char)((irp_FAN_MAX_OFF << irp_FAN_MAX_BIT) & irp_FAN_MAX_MASK));
+    irp_SET_BITS(FAN_MAX_OR_ION_OR_POWER_OFF, irp_FAN_MAX_OR_ION_OR_POWER_OFF_FALSE);
+    irp_SET_BITS(FAN_MAX_PART1, irp_FAN_MAX_OFF);
+    irp_SET_BITS(FAN_MAX_PART2, irp_FAN_MAX_OFF);
   }
 }
 
-void IRP_Message::setTemperatureRelative(int16_t temperature)
+void IRP_Message::setTemperatureRelative(uint8_t temperature)
 {
-  uint8_t temperature_computed = 0;
+  uint8_t temperature_computed = irp_TEMP_RELATIVE_0;
 
-  /* when negative value */
-  if (temperature < 0)
+  /* when in range */
+  switch (temperature)
   {
-    /* add signed value */
-    temperature_computed = irp_TEMP_RELATIVE_SIGNED_MASK;
-    /* keep only numerical value without signed */
-    temperature *= -1;
-  }
-  else
-  {
-    /* nothing to do: positive value */
-  }
+    case irp_TEMP_RELATIVE_NEGATIVE_2:
+    case irp_TEMP_RELATIVE_NEGATIVE_1:
+    case irp_TEMP_RELATIVE_0:
+    case irp_TEMP_RELATIVE_POSITIVE_1:
+    case irp_TEMP_RELATIVE_POSITIVE_2:
+      temperature_computed = temperature;
+      break;
 
-  /* limit numerical value maximum */
-  if (temperature > irp_TEMP_RELATIVE_NUM_MAX)
-  {
-    /* cannot exceed maximum */
-    temperature = irp_TEMP_RELATIVE_NUM_MAX;
+    default:
+      /* when out of range, use null value */
+      temperature_computed = irp_TEMP_RELATIVE_0;
+      break;
   }
-  else
-  {
-    /* nothing to do: numerical value so start from 0 until max */
-  }
-
-  /* set numerical value */
-  temperature_computed |= (uint8_t)temperature;
 
   /* set value in output buffer */
-  _data[irp_TEMP_RELATIVE_BYTE] =
-    ((_data[irp_TEMP_RELATIVE_BYTE] & ~irp_TEMP_RELATIVE_MASK) |
-     (uint8_t)((temperature_computed << irp_TEMP_RELATIVE_BIT) & irp_TEMP_RELATIVE_MASK));
+  irp_SET_BITS(TEMP_RELATIVE, temperature_computed);
 }
 
 void IRP_Message::setTemperature(uint8_t temperature)
 {
   uint8_t temperature_computed = 0;
 
-  if (!temperature)
+  /* do not touch when temperature is 0, it means "not used" */
+  if (temperature != 0)
   {
-    /* temperature not used = 0 */
-    temperature_computed = 0;
-  }
-  else
-  {
-    /* temperature is used */
-    if (temperature > irp_TEMPERATURE_MAX)
-    {
-      temperature_computed = irp_TEMPERATURE_MAX - irp_TEMPERATURE_OFFSET;
-    }
-    else if (temperature < irp_TEMPERATURE_MIN)
-    {
-      temperature_computed = irp_TEMPERATURE_MIN - irp_TEMPERATURE_OFFSET;
-    }
-    else
-    {
-      /* nothing to do: temperature in bounds */
-    }
+      /* temperature is used */
+      if (temperature > irp_TEMPERATURE_MAX)
+      {
+          temperature = irp_TEMPERATURE_MAX;
+      }
+      else if ((temperature < irp_TEMPERATURE_MIN) && (temperature != 0))
+      {
+          temperature = irp_TEMPERATURE_MIN;
+      }
+      else
+      {
+          /* nothing to do: temperature in bounds */
+      }
+      temperature_computed = temperature - irp_TEMPERATURE_OFFSET;
   }
 
   /* set temperature in output buffer */
-  _data[irp_TEMPERATURE_BYTE] =
-    ((_data[irp_TEMPERATURE_BYTE] & ~irp_TEMPERATURE_MASK) |
-     (uint8_t)((temperature_computed << irp_TEMPERATURE_BIT) & irp_TEMPERATURE_MASK));
+  irp_SET_BITS(TEMPERATURE, temperature_computed);
 }
 
 

@@ -1,0 +1,194 @@
+-- see constant value from library Ardlantic in Ardlantic_IRP.h
+
+-- Flow Mode
+--  corresponding table from switch selector (dummy device
+--  'Chauffage_Salon_Mode') to IRP_FlowMode_t
+local FLOW_MODE = {
+   [10] = { ['name'] = 'Chauffage', ['HVAC'] = 1 },
+   [20] = { ['name'] = 'Clim',      ['HVAC'] = 2 },
+   [30] = { ['name'] = 'Wet',       ['HVAC'] = 3 },
+   [40] = { ['name'] = 'Auto',      ['HVAC'] = 0 }
+}
+
+-- Fan Mode
+--  corresponding table from switch selector (dummy device
+--  'Chauffage_Salon_Soufflant') to IRP_FanMode_t
+local FAN_MODE = {
+   [10] = { ['name'] = 'Low',    ['HVAC'] = 3 },
+   [20] = { ['name'] = 'Middle', ['HVAC'] = 5 },
+   [30] = { ['name'] = 'High',   ['HVAC'] = 7 },
+   [40] = { ['name'] = 'Auto',   ['HVAC'] = 2 }
+}
+
+-- Temperature
+--  corresponding table from switch selector (dummy device
+--  'Chauffage_Salon_Temperature') to real temperature value
+local TEMPERATURE = {
+   [10]  = { ['HVAC'] = 18 },
+   [20]  = { ['HVAC'] = 19 },
+   [30]  = { ['HVAC'] = 20 },
+   [40]  = { ['HVAC'] = 21 },
+   [50]  = { ['HVAC'] = 22 },
+   [60]  = { ['HVAC'] = 23 },
+   [70]  = { ['HVAC'] = 24 },
+   [80]  = { ['HVAC'] = 25 },
+   [90]  = { ['HVAC'] = 26 },
+   [100] = { ['HVAC'] = 27 },
+   [110] = { ['HVAC'] = 28 },
+   [120] = { ['HVAC'] = 29 },
+   [130] = { ['HVAC'] = 30 },
+   [140] = { ['HVAC'] = 31 },
+   [150] = { ['HVAC'] = 32 }
+}
+
+-- Relative Temperature
+--  corresponding table from switch selector (dummy device
+--  'Chauffage_Salon_Temp_Auto') to real relative temperature
+--   relative temperature has following format:
+--   - 0bYXXX with:
+--     - XXX is temp
+--     - Y is sign bit (0 => +, 1 => -)
+local TEMP_RELATIVE = {
+   [10] = { ['name'] = '-2°C', ['HVAC'] = 10 },    -- -2°C
+   [20] = { ['name'] = '-1°C', ['HVAC'] =  9 },    -- -1°C
+   [30] = { ['name'] = '0°C',  ['HVAC'] =  0 },    --  0°C
+   [40] = { ['name'] = '1°C',  ['HVAC'] =  1 },    --  1°C
+   [50] = { ['name'] = '2°C',  ['HVAC'] =  2 },    --  2°C
+}
+
+-- ON/OFF
+--  corresponding table from switch selector (dummy device
+--  'Chauffage_Salon_On_Off') to command ON or OFF
+local ON_OFF = {
+   [0]  = { ['HVAC'] = 'HVAC_FirstFloor_Off' },
+   [10] = { ['HVAC'] = 'HVAC_FirstFloor_On' }
+}
+
+return {
+   on = {
+      -- declare each Domoticz devices which trigger following execute function
+      devices = {
+         -- Chauffage_Salon_xx are dummy devices to have a nice interface
+         -- HVAC_FirstFloor_xx are arduino/MySensors devices
+         'Chauffage_Salon_Mode',
+         'HVAC_FirstFloor_Flow_Mode',
+         'Chauffage_Salon_Soufflant',
+         'HVAC_FirstFloor_Fan_Mode',
+         'Chauffage_Salon_Temperature',
+         'HVAC_FirstFloor_Temperature',
+         'Chauffage_Salon_Temp_Auto',
+         'HVAC_FirstFloor_Temp_Relative',
+         'Chauffage_Salon_On_Off',
+         'HVAC_FirstFloor_Off',
+         'HVAC_FirstFloor_On',
+         'Chauffage_Salon_Ok',
+         'HVAC_FirstFloor_Send'
+      }
+   },
+
+   execute = function(domoticz, device)
+      local in_flow_mode = domoticz.devices('Chauffage_Salon_Mode')
+      local out_flow_mode = domoticz.devices('HVAC_FirstFloor_Flow_Mode')
+
+      local in_fan_mode = domoticz.devices('Chauffage_Salon_Soufflant')
+      local out_fan_mode = domoticz.devices('HVAC_FirstFloor_Fan_Mode')
+
+      local in_temperature = domoticz.devices('Chauffage_Salon_Temperature')
+      local out_temperature = domoticz.devices('HVAC_FirstFloor_Temperature')
+
+      local in_temp_relative = domoticz.devices('Chauffage_Salon_Temp_Auto')
+      local out_temp_relative = domoticz.devices('HVAC_FirstFloor_Temp_Relative')
+
+      local in_on_off = domoticz.devices('Chauffage_Salon_On_Off')
+      local out_off = domoticz.devices('HVAC_FirstFloor_Off')
+      local out_on = domoticz.devices('HVAC_FirstFloor_On')
+
+      local in_send = domoticz.devices('Chauffage_Salon_Ok')
+      local out_send = domoticz.devices('HVAC_FirstFloor_Send')
+
+      local out_clear = domoticz.devices('HVAC_FirstFloor_Clear')
+
+      local temperature = TEMPERATURE[in_temperature.level].HVAC
+      local temp_relative = TEMP_RELATIVE[in_temp_relative.level].HVAC
+
+      -- when Wet/Auto is selected flow mode temperature must be at 0
+      if (FLOW_MODE[in_flow_mode.level].name == "Wet" or FLOW_MODE[in_flow_mode.level].name == "Auto") then
+         temperature = 0
+      else
+         temp_relative = 0
+      end
+
+      -- FLOW MODE
+      if (device.name == in_flow_mode.name) then
+         domoticz.notify('Salon::HVAC:: Set to ' .. FLOW_MODE[in_flow_mode.level].name  .. '.')
+         out_flow_mode.dimTo(FLOW_MODE[in_flow_mode.level].HVAC)
+      end
+
+      -- FAN MODE
+      if (device.name == in_fan_mode.name) then
+         domoticz.notify('Salon::HVAC:: Set to Fan ' .. FAN_MODE[in_fan_mode.level].name .. '.')
+         out_fan_mode.dimTo(FAN_MODE[in_fan_mode.level].HVAC)
+      end
+
+      -- TEMPERATURE
+      if (device.name == in_temperature.name) then
+         domoticz.notify('Salon::HVAC:: Set temperature to ' .. temperature .. '°C.')
+         out_temperature.dimTo(temperature)
+      end
+
+      -- TEMPERATURE RELATIVE
+      if (device.name == in_temp_relative.name) then
+         domoticz.notify('Salon::HVAC:: Set relative temperature to ' .. TEMP_RELATIVE[in_temp_relative.level].name .. '.')
+         out_temp_relative.dimTo(temp_relative)
+      end
+
+      -- ON/OFF
+      if (device.name == in_on_off.name) then
+         -- send all values already set in interface (temp/flow/fan)
+         domoticz.notify('Salon::HVAC:: Send all values.')
+         out_flow_mode.dimTo(FLOW_MODE[in_flow_mode.level].HVAC)
+         out_temperature.dimTo(temperature)
+         out_fan_mode.dimTo(FAN_MODE[in_fan_mode.level].HVAC).afterSec(0.3)
+         -- max 3 message in MySensors buffer otherwise next one is trashed (NRF24 limitation)
+         -- so next message are 1s delayed
+
+         -- when select OFF
+         if (out_off.name == ON_OFF[in_on_off.level].HVAC) then
+            -- enable off and disable on after 1s
+            domoticz.notify('Salon::HVAC:: Send command OFF.')
+            out_on.switchOff().afterSec(0.3)
+            out_off.switchOn().afterSec(0.6)
+         else
+            -- disable off and enable on after 1s
+            domoticz.notify('Salon::HVAC:: Send command ON.')
+            out_off.switchOff().afterSec(0.3)
+            out_on.switchOn().afterSec(0.6)
+         end
+         -- send IR to AC after 1s
+         domoticz.notify('Salon::HVAC:: Send IR command.')
+         out_send.switchOn().afterSec(1)
+         -- clear frame to sent to HVAC by IR, with 2s delay (avoid NRF24 limitation)
+         out_clear.switchOn().afterSec(1)
+      end
+
+      -- SEND
+      if (device.name == in_send.name) then
+         -- send all values already set in interface (temp/flow/fan)
+         domoticz.notify('Salon::HVAC:: Send all values.')
+         out_flow_mode.dimTo(FLOW_MODE[in_flow_mode.level].HVAC)
+         out_temperature.dimTo(temperature)
+         out_fan_mode.dimTo(FAN_MODE[in_fan_mode.level].HVAC).afterSec(0.3)
+         -- max 3 message in MySensors buffer otherwise next one is trashed (NRF24 limitation)
+         -- so next message are 1s delayed
+
+         -- disable on and off after 1s
+         out_off.switchOff().afterSec(0.3)
+         out_on.switchOff().afterSec(0.6)
+         -- send IR to HVAC after 1s
+         domoticz.notify('Salon::HVAC:: Send IR command.')
+         out_send.switchOn().afterSec(1)
+         -- clear frame to sent to HVAC by IR, with 2s delay (avoid NRF24 limitation)
+         out_clear.switchOn().afterSec(1)
+      end
+   end
+}

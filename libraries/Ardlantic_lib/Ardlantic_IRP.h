@@ -50,12 +50,13 @@ public:
 
   void setIon(bool isEnableIon);
   void setStartUp(bool isStartUp);
+  void setPowerOff(bool isPowerOff);
   void setSwing(bool isEnableSwing);
   void setHour(uint8_t hour);
   void setFanMode(IRP_FanMode_t fanMode);
   bool setFlowMode(IRP_FlowMode_t flowMode);
   void setFanMax(bool isFanMax);
-  void setTemperatureRelative(int16_t temperature);
+  void setTemperatureRelative(uint8_t temperature);
   void setTemperature(uint8_t temperature);
 
 private:

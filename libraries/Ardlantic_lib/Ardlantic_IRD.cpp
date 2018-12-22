@@ -26,62 +26,62 @@
 /* main Arduino clock */
 #define ird_SYSCLOCK  F_CPU
 
-// /* Use timer1 (16 bits) for pwm on pin9 */
-// #define ird_TIMER_ENABLE_PWM()    (TCCR1A |= _BV(COM1A1))
-// #define ird_TIMER_DISABLE_PWM()   (TCCR1A &= ~(_BV(COM1A1)))
-// #define ird_TIMER_ENABLE_INTR()   (TIMSK1 = _BV(OCIE1A))
-// #define ird_TIMER_DISABLE_INTR()  (TIMSK1 = 0)
-// #define ird_TIMER_INTR_NAME()     TIMER1_COMPA_vect
+/* Use timer1 (16 bits) for pwm on pin9 */
+#define ird_TIMER_ENABLE_PWM()    (TCCR1A |= _BV(COM1A1))
+#define ird_TIMER_DISABLE_PWM()   (TCCR1A &= ~(_BV(COM1A1)))
+#define ird_TIMER_ENABLE_INTR()   (TIMSK1 = _BV(OCIE1A))
+#define ird_TIMER_DISABLE_INTR()  (TIMSK1 = 0)
+#define ird_TIMER_INTR_NAME()     TIMER1_COMPA_vect
 
-// #define ird_TIMER_CONFIG_KHZ(val) ({                             \
-//       const uint16_t pwmval = ird_SYSCLOCK / 2000 / (val);       \
-//       TCCR1A                = _BV(WGM11);                        \
-//       TCCR1B                = _BV(WGM13) | _BV(CS10);            \
-//       ICR1                  = pwmval;                            \
-//       OCR1A                 = pwmval / 3;                        \
-//     })
-// #define ird_TIMER_CONFIG_NORMAL() ({                    \
-//       TCCR1A = 0;                                       \
-//       TCCR1B = _BV(WGM12) | _BV(CS10);                  \
-//       OCR1A  = ird_SYSCLOCK * USECPERTICK / 1000000;    \
-//       TCNT1  = 0;                                       \
-//     })
-// #define ird_TIMER_PWM_PIN 9
+#define ird_TIMER_CONFIG_KHZ(val) ({                              \
+            const uint16_t pwmval = ird_SYSCLOCK / 2000 / (val);  \
+            TCCR1A                = _BV(WGM11);                   \
+            TCCR1B                = _BV(WGM13) | _BV(CS10);       \
+            ICR1                  = pwmval;                       \
+            OCR1A                 = pwmval / 3;                   \
+        })
+#define ird_TIMER_CONFIG_NORMAL() ({                            \
+            TCCR1A = 0;                                         \
+            TCCR1B = _BV(WGM12) | _BV(CS10);                    \
+            OCR1A  = ird_SYSCLOCK * USECPERTICK / 1000000;      \
+            TCNT1  = 0;                                         \
+        })
+#define ird_TIMER_PWM_PIN 9
 
 
 /* Use timer4 (10 bits) for pwm on pin6 */
-#define ird_TIMER_ENABLE_PWM()          (TCCR4A |= _BV(COM4A1))
-#define ird_TIMER_DISABLE_PWM()         (TCCR4A &= ~(_BV(COM4A1)))
-#define ird_TIMER_ENABLE_INTR()         (TIMSK4 = _BV(TOIE4))
-#define ird_TIMER_DISABLE_INTR()        (TIMSK4 = 0)
-#define ird_TIMER_INTR_NAME()           TIMER4_OVF_vect
-
-#define ird_TIMER_CONFIG_KHZ(val) ({                          \
-      const uint16_t pwmval = ird_SYSCLOCK / 2000 / (val);    \
-      TCCR4A                = (1 << PWM4A);                   \
-      TCCR4B                = _BV(CS40);                      \
-      TCCR4C                = 0;                              \
-      TCCR4D                = (1 << WGM40);                   \
-      TCCR4E                = 0;                              \
-      TC4H                  = pwmval >> 8;                    \
-      OCR4C                 = pwmval;                         \
-      TC4H                  = (pwmval / 3) >> 8;              \
-      OCR4A                 = (pwmval / 3) & 255;             \
-    })
-
-#define ird_TIMER_CONFIG_NORMAL() ({                        \
-      TCCR4A = 0;                                           \
-      TCCR4B = _BV(CS40);                                   \
-      TCCR4C = 0;                                           \
-      TCCR4D = 0;                                           \
-      TCCR4E = 0;                                           \
-      TC4H   = (SYSCLOCK * USECPERTICK / 1000000) >> 8;     \
-      OCR4C  = (SYSCLOCK * USECPERTICK / 1000000) & 255;    \
-      TC4H   = 0;                                           \
-      TCNT4  = 0;                                           \
-    })
-
-#define ird_TIMER_PWM_PIN 6
+/* #define ird_TIMER_ENABLE_PWM()          (TCCR4A |= _BV(COM4A1))     */
+/* #define ird_TIMER_DISABLE_PWM()         (TCCR4A &= ~(_BV(COM4A1)))  */
+/* #define ird_TIMER_ENABLE_INTR()         (TIMSK4 = _BV(TOIE4))       */
+/* #define ird_TIMER_DISABLE_INTR()        (TIMSK4 = 0)                */
+/* #define ird_TIMER_INTR_NAME()           TIMER4_OVF_vect             */
+/*                                                                     */
+/* #define ird_TIMER_CONFIG_KHZ(val) ({                          \     */
+/*       const uint16_t pwmval = ird_SYSCLOCK / 2000 / (val);    \     */
+/*       TCCR4A                = (1 << PWM4A);                   \     */
+/*       TCCR4B                = _BV(CS40);                      \     */
+/*       TCCR4C                = 0;                              \     */
+/*       TCCR4D                = (1 << WGM40);                   \     */
+/*       TCCR4E                = 0;                              \     */
+/*       TC4H                  = pwmval >> 8;                    \     */
+/*       OCR4C                 = pwmval;                         \     */
+/*       TC4H                  = (pwmval / 3) >> 8;              \     */
+/*       OCR4A                 = (pwmval / 3) & 255;             \     */
+/*     })                                                              */
+/*                                                                     */
+/* #define ird_TIMER_CONFIG_NORMAL() ({                        \       */
+/*       TCCR4A = 0;                                           \       */
+/*       TCCR4B = _BV(CS40);                                   \       */
+/*       TCCR4C = 0;                                           \       */
+/*       TCCR4D = 0;                                           \       */
+/*       TCCR4E = 0;                                           \       */
+/*       TC4H   = (SYSCLOCK * USECPERTICK / 1000000) >> 8;     \       */
+/*       OCR4C  = (SYSCLOCK * USECPERTICK / 1000000) & 255;    \       */
+/*       TC4H   = 0;                                           \       */
+/*       TCNT4  = 0;                                           \       */
+/*     })                                                              */
+/*                                                                     */
+/* #define ird_TIMER_PWM_PIN 6                                         */
 
 
 void ird_enableIROut(int khz);

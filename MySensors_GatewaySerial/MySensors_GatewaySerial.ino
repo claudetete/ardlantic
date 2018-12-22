@@ -36,6 +36,17 @@
 *
 */
 
+/* TO FIX USB ID */
+/* using clone arduino nano: */
+/* $ sudo lsusb -v | grep 'idVendor\|idProduct\|iProduct\|iSerial' */
+/*  idVendor           0x1a86 QinHeng Electronics */
+/*  idProduct          0x7523 HL-340 USB-Serial adapter */
+/*  iProduct                2 USB2.0-Serial */
+/*  iSerial                 0  */
+/*  */
+/*  */
+
+
 // Enable debug prints to serial monitor
 #define MY_DEBUG
 
@@ -46,7 +57,8 @@
 
 // Set LOW transmit power level as default, if you have an amplified NRF-module and
 // power your radio separately with a good regulator you can turn up PA level.
-#define MY_RF24_PA_LEVEL RF24_PA_LOW
+/* #define MY_RF24_PA_LEVEL RF24_PA_LOW */
+#define MY_RF24_PA_LEVEL RF24_PA_HIGH
 
 // Enable serial gateway
 #define MY_GATEWAY_SERIAL
