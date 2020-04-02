@@ -1,5 +1,10 @@
-layout/Ardlantic_3D.png
-layout/SparkFun_SchematicComponents.lib
-layout/ardlantic/ardlantic-job.gbrjob
-layout/ardlantic/ardlantic.bak
-layout/ardlantic/ardlantic.kicad_pcb-bak
+/layout/Ardlantic_3D.png
+/layout/SparkFun_SchematicComponents.lib
+/layout/ardlantic/ardlantic-job.gbrjob
+/layout/ardlantic/ardlantic.bak
+/layout/ardlantic/ardlantic.sch-bak
+/layout/ardlantic/ardlantic.kicad_pcb-bak
+/layout/ardlantic/fp-info-cache
+*.gbr
+*.zip
+/layout/powersupply5v/

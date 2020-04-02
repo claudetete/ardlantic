@@ -27,7 +27,7 @@
 
 /* node id used for gateway (must be uniq) */
 /* when not set it leave the gateway to assign an id (do not work always) */
-#define MY_NODE_ID 44
+#define MY_NODE_ID 42
 
 /* MySensors will override usual function of a sketch, it for a node it need a gateway to start */
 #include <MySensors.h>
@@ -116,7 +116,18 @@ void setup()
 void presentation()
 {
   /* Send the sketch version information to the gateway and Node */
+#if MY_NODE_ID == 42
+  sendSketchInfo("AC First Floor", "1.0");
+#endif
+#if MY_NODE_ID == 44
   sendSketchInfo("AC Cat Room", "1.0");
+#endif
+#if MY_NODE_ID == 45
+  sendSketchInfo("AC Child 1 Room", "1.0");
+#endif
+#if MY_NODE_ID == 46
+  sendSketchInfo("AC Parents Room", "1.0");
+#endif
 
   /* everything to present each sensors/actuators on this node to the gateway (so domotic box will register it) */
   present(SENSOR_ID_SEND, S_BINARY);
